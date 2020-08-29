@@ -1,0 +1,8 @@
+TODO:
+Add a reset button
+Optimize for fetching
+Add mobile check
+Optimize zoom and pan
+Slider, agg Manila
+Change the legend to ems
+Note: Manila PH1339[00000]
