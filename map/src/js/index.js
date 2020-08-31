@@ -1,43 +1,67 @@
+var summary = d3.map();
+var details = d3.map();
+var stateIds = d3.map();
+var stateNames = d3.map();
+var max = 1000;
+var color;
+
+var svg = d3.select('svg'),
+  width = +svg.attr('width'),
+  height = +svg.attr('height');
+var path = d3.geoPath();
+
+const tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("opacity", 0)
+
 var promises = [
   d3.json('https://d3js.org/us-10m.v1.json'),
   d3
     .json('https://api.jsonbin.io/b/5f4c8259993a2e110d3ad302/latest')
     .then(function (d) {
       // details
-    }),
-  d3
-    .json('https://api.jsonbin.io/b/5f4c81c2514ec5112d12aa06/latest')
-    .then(function (d) {
-      // summary
-    }),
-  d3
-    .json('https://api.jsonbin.io/b/5f4c79f74d8ce4111385197d/latest')
-    .then(function (d) {
-      // states
       for (var i = 0; i < d.length; i++) {
-        stateNames.set(d[i].id, d[i].name);
+        var dd = details.get(d[i].state);
+        var dt = { status: d[i].status, count: d[i].count };
+        if (dd)
+          details.set(d[i].state, [...dd, dt]);
+        else
+          details.set(d[i].state, [dt]);
       }
-    })
+    }),
+
 ];
 
-Promise.all(promises).then(ready);
+d3
+  .json('https://api.jsonbin.io/b/5f4c81c2514ec5112d12aa06/latest')
+  .then(function (d) {
+    // summary
+    for (var i = 0; i < d.length; i++) {
+      summary.set(d[i].state, d[i].count);
+      if (d[i].count > max) {
+        max = d[i].count;
+        console.log(max);
+      }
+    }
 
-var svg = d3.select('svg'),
-  width = +svg.attr('width'),
-  height = +svg.attr('height');
+    d3
+      .json('https://api.jsonbin.io/b/5f4c79f74d8ce4111385197d/latest')
+      .then(function (d) {
+        // states
+        for (var i = 0; i < d.length; i++) {
+          stateNames.set(d[i].code, d[i].name);
+          stateIds.set(d[i].id, d[i].code);
+        }
 
-var summary = d3.map();
-var stateNames = d3.map();
-
-var path = d3.geoPath();
-
-var color = d3.scaleThreshold().domain(d3.range(0, 9)).range(d3.schemeBlues[9]);
-var colorRange = ['#deebf7', '#08306b'];
+        color = d3.scaleLinear().domain([0, max]).range(['#fff', '#08306b'])
+          .interpolate(d3.interpolateCubehelix)
+          ;
+      }).then(() => Promise.all(promises).then(ready));
+  });
 
 function ready([us]) {
-  console.log('in ready', topojson.feature(us, us.objects.states).features);
-  console.log('statenames', stateNames);
-  console.log('summary', summary);
+  document.getElementById("preloader").style.display = "none";
+  document.getElementById("graph").style.display = "block";
 
   svg
     .append('g')
@@ -47,18 +71,44 @@ function ready([us]) {
     .enter()
     .append('path')
     .attr('fill', function (d) {
-      var sn = stateNames.get(d.id);
-      // d.rate = unemployment.get(stateNames.get(d.id)) || 0;
-      d.rate = 0;
-      var col = color(d.rate);
-      if (col) {
-        return col;
-      } else {
-        return '#ffffff';
-      }
+      var code = stateIds.get(Number(d.id));
+      var summaryCode = summary.get(code);
+      return summaryCode ? color(summaryCode) : "#dddddd";
     })
     .attr('d', path)
-    .append('title');
+    .on("mouseover", function (d) {
+      var code = stateIds.get(Number(d.id));
+      var name = stateNames.get(code);
+      tooltip.transition()
+        .duration(300)
+        .style("opacity", 0.9);
+
+      var htmlString = '';
+      detailsFromCode = details.get(code);
+
+      if (detailsFromCode)
+        detailsFromCode.forEach((e) => {
+          htmlString += `<tr><td class='number'>${e.count}</td><td class='label'>${e.status}</td></tr>`
+        });
+
+      tooltip.html(
+        `<p>${name}</p>
+        <table><tbody>
+        <tr><td class='number'>${summary.get(code) | 0}</td><td class='label'>Total Calls</td></tr>
+        </tbody></table>
+        <table><tbody>${htmlString}</tbody></table>`
+      )
+        .style("left", (d3.event.pageX + 15) + "px")
+        .style("top", (d3.event.pageY - 28) + "px");
+
+      d3.select(this).attr("opacity", "0.9");
+    }).on("mouseout", function (d) {
+      tooltip.transition()
+        .duration(300)
+        .style("opacity", 0);
+
+      d3.select(this).attr("opacity", "1");
+    });
 
   svg
     .append('path')
@@ -67,6 +117,5 @@ function ready([us]) {
         return a !== b;
       })
     )
-    .attr('class', 'states')
-    .attr('d', path);
+    .attr('class', 'states');
 }

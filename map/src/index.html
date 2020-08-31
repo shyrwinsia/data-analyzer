@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8" />
 <head>
-  <title>PH COVID-19 Stats</title>
+  <title>Stafftronix Data Analytics</title>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
   <script src="https://d3js.org/topojson.v2.min.js"></script>
@@ -11,7 +11,10 @@
   <div id="map">
     <h1>Stafftronix Data Analytics</h1>
     <h3>Call Frequency across Different States</h3>
-    <svg width="960" height="600"></svg>
+    <div id="preloader">
+      <object id="loading-animation" data="assets/loading.svg" type="image/svg+xml"></object>
+  </div>
+    <svg id="graph" style="display:none" width="960" height="600"></svg>
   </div>
 </body>
 <script type="application/javascript" src="js/index.js"></script>
