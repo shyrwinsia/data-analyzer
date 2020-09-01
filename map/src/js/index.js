@@ -5,14 +5,16 @@ var stateNames = d3.map();
 var max = 1000;
 var color;
 
-var svg = d3.select('svg'),
+var svg = d3.select('#graph'),
   width = +svg.attr('width'),
   height = +svg.attr('height');
 var path = d3.geoPath();
 
-const tooltip = d3.select("body").append("div")
-  .attr("class", "tooltip")
-  .style("opacity", 0)
+const tooltip = d3
+  .select('body')
+  .append('div')
+  .attr('class', 'tooltip')
+  .style('opacity', 0);
 
 var promises = [
   d3.json('https://d3js.org/us-10m.v1.json'),
@@ -23,18 +25,14 @@ var promises = [
       for (var i = 0; i < d.length; i++) {
         var dd = details.get(d[i].state);
         var dt = { status: d[i].status, count: d[i].count };
-        if (dd)
-          details.set(d[i].state, [...dd, dt]);
-        else
-          details.set(d[i].state, [dt]);
+        if (dd) details.set(d[i].state, [...dd, dt]);
+        else details.set(d[i].state, [dt]);
       }
-    }),
-
+    })
 ];
 
-d3
-  .json('https://api.jsonbin.io/b/5f4c81c2514ec5112d12aa06/latest')
-  .then(function (d) {
+d3.json('https://api.jsonbin.io/b/5f4c81c2514ec5112d12aa06/latest').then(
+  function (d) {
     // summary
     for (var i = 0; i < d.length; i++) {
       summary.set(d[i].state, d[i].count);
@@ -44,8 +42,7 @@ d3
       }
     }
 
-    d3
-      .json('https://api.jsonbin.io/b/5f4c79f74d8ce4111385197d/latest')
+    d3.json('https://api.jsonbin.io/b/5f4c79f74d8ce4111385197d/latest')
       .then(function (d) {
         // states
         for (var i = 0; i < d.length; i++) {
@@ -53,15 +50,19 @@ d3
           stateIds.set(d[i].id, d[i].code);
         }
 
-        color = d3.scaleLinear().domain([0, max]).range(['#fff', '#08306b'])
-          .interpolate(d3.interpolateCubehelix)
-          ;
-      }).then(() => Promise.all(promises).then(ready));
-  });
+        color = d3
+          .scaleLinear()
+          .domain([0, max])
+          .range(['#f2fdfe', '#079ca2'])
+          .interpolate(d3.interpolateCubehelix);
+      })
+      .then(() => Promise.all(promises).then(ready));
+  }
+);
 
 function ready([us]) {
-  document.getElementById("preloader").style.display = "none";
-  document.getElementById("graph").style.display = "block";
+  document.getElementById('preloader').style.display = 'none';
+  document.getElementById('graph').style.display = 'block';
 
   svg
     .append('g')
@@ -73,41 +74,41 @@ function ready([us]) {
     .attr('fill', function (d) {
       var code = stateIds.get(Number(d.id));
       var summaryCode = summary.get(code);
-      return summaryCode ? color(summaryCode) : "#dddddd";
+      return summaryCode ? color(summaryCode) : '#ccc';
     })
     .attr('d', path)
-    .on("mouseover", function (d) {
+    .on('mouseover', function (d) {
       var code = stateIds.get(Number(d.id));
       var name = stateNames.get(code);
-      tooltip.transition()
-        .duration(300)
-        .style("opacity", 0.9);
+      tooltip.transition().duration(300).style('opacity', 0.9);
 
       var htmlString = '';
       detailsFromCode = details.get(code);
 
       if (detailsFromCode)
         detailsFromCode.forEach((e) => {
-          htmlString += `<tr><td class='number'>${e.count}</td><td class='label'>${e.status}</td></tr>`
+          htmlString += `<tr><td class='number'>${e.count}</td><td class='label'>${e.status}</td></tr>`;
         });
 
-      tooltip.html(
-        `<p>${name}</p>
+      tooltip
+        .html(
+          `<p>${name}</p>
         <table><tbody>
-        <tr><td class='number'>${summary.get(code) | 0}</td><td class='label'>Total Calls</td></tr>
+        <tr><td class='number'>${
+          summary.get(code) | 0
+        }</td><td class='label'>Total Calls</td></tr>
         </tbody></table>
         <table><tbody>${htmlString}</tbody></table>`
-      )
-        .style("left", (d3.event.pageX + 15) + "px")
-        .style("top", (d3.event.pageY - 28) + "px");
+        )
+        .style('left', d3.event.pageX + 15 + 'px')
+        .style('top', d3.event.pageY - 28 + 'px');
 
-      d3.select(this).attr("opacity", "0.9");
-    }).on("mouseout", function (d) {
-      tooltip.transition()
-        .duration(300)
-        .style("opacity", 0);
+      d3.select(this).attr('opacity', '0.9');
+    })
+    .on('mouseout', function (d) {
+      tooltip.transition().duration(300).style('opacity', 0);
 
-      d3.select(this).attr("opacity", "1");
+      d3.select(this).attr('opacity', '1');
     });
 
   svg
@@ -118,4 +119,63 @@ function ready([us]) {
       })
     )
     .attr('class', 'states');
+
+  var w = 300,
+    h = 50;
+
+  var key = d3.select('#legend');
+
+  var legend = key
+    .append('defs')
+    .append('svg:linearGradient')
+    .attr('id', 'gradient')
+    .attr('x1', '0%')
+    .attr('y1', '100%')
+    .attr('x2', '100%')
+    .attr('y2', '100%')
+    .attr('spreadMethod', 'pad');
+
+  legend
+    .append('stop')
+    .attr('offset', '0%')
+    .attr('stop-color', color(0))
+    .attr('stop-opacity', 1);
+
+  legend
+    .append('stop')
+    .attr('offset', '100%')
+    .attr('stop-color', color(max))
+    .attr('stop-opacity', 1);
+
+  key
+    .append('rect')
+    .attr('width', w)
+    .attr('height', h - 42)
+    .style('fill', 'url(#gradient)')
+    .attr('transform', 'translate(0, 18)');
+
+  key
+    .append('g')
+    .attr('class', 'y axis')
+    .attr('transform', 'translate(95, 10)')
+    .append('text')
+    .attr('class', 'legend-text')
+    .text('Frequency of Calls');
+
+  key
+    .append('g')
+    .attr('class', 'y axis')
+    .attr('transform', 'translate(0, 38)')
+    .append('text')
+    .attr('class', 'legend-subtext')
+    .text('Less Calls');
+
+  key
+    .append('g')
+    .attr('class', 'y axis')
+    .attr('transform', 'translate(300, 38)')
+    .append('text')
+    .attr('text-anchor', 'end')
+    .attr('class', 'legend-subtext')
+    .text('More Calls');
 }
