@@ -23,12 +23,12 @@ if len(sys.argv) < 2:
     print("Error: Missing file!")
     print("Usage: upload [filename]")
     print("Example: upload hello.txt")
-    quit(1)
+    exit(1)
 
 file_name = sys.argv[1]
 if not os.path.exists(file_name):
     print("Error: File does not exist.")
-    quit(1)
+    exit(1)
 
 print("Extracting data.")
 df = pd.read_csv(file_name, sep="\t")

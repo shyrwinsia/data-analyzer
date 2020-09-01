@@ -39,7 +39,10 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Python
 client/data/**
+client/build/**
+client/upload.spec
 
 # Logs
 logs
@@ -106,3 +109,4 @@ typings/
 # Parcel related files
 dist/
 .cache/
+
