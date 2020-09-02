@@ -19,36 +19,46 @@ def post_to_json_bin(df, bucket):
     ).json()
 
 
-if len(sys.argv) < 2:
-    print("Error: Missing file!")
-    print("Usage: upload [filename]")
-    print("Example: upload hello.txt")
-    exit(1)
+def main():
+    if len(sys.argv) < 2:
+        print("Error: Missing file!")
+        print("Usage: upload [filename] ...")
+        print("Example: upload hello.txt")
+        return 1
 
-file_name = sys.argv[1]
-if not os.path.exists(file_name):
-    print("Error: File does not exist.")
-    exit(1)
+    df = pd.DataFrame()
 
-print("Extracting data.")
-df = pd.read_csv(file_name, sep="\t")
-df.drop_duplicates(inplace=True)
-df.dropna(subset=["state", "status"])
-df = df[["state", "status"]]
+    for i, arg in enumerate(sys.argv[1:]):
+        if not os.path.exists(arg):
+            print(f"Error: File {arg} does not exist.")
+            return 1
 
-summary = (
-    pd.DataFrame(df.state.value_counts())
-    .reset_index()
-    .rename(columns={"index": "state", "state": "count"})
-)
-details = pd.DataFrame({"count": df.groupby(["state", "status"]).size()}).reset_index()
+        print(f"Extracting {arg}...")
+        df = df.append(pd.read_csv(arg, sep="\t"))
 
-print("Uploading summary.")
-response = post_to_json_bin(summary, "5f4c81c2514ec5112d12aa06")
-print("Success? %s" % response["success"])
+    df.drop_duplicates(inplace=True)
+    df.dropna(subset=["state", "status"])
+    df = df[["state", "status"]]
 
-print("Uploading details.")
-response = post_to_json_bin(details, "5f4c8259993a2e110d3ad302")
-print("Success? %s" % response["success"])
+    summary = (
+        pd.DataFrame(df.state.value_counts())
+        .reset_index()
+        .rename(columns={"index": "state", "state": "count"})
+    )
+    details = pd.DataFrame(
+        {"count": df.groupby(["state", "status"]).size()}
+    ).reset_index()
 
-print("Uploaded " + file_name)
+    print("Uploading summary.")
+    response = post_to_json_bin(summary, "5f4c81c2514ec5112d12aa06")
+    print("Success? %s" % response["success"])
+
+    print("Uploading details.")
+    response = post_to_json_bin(details, "5f4c8259993a2e110d3ad302")
+    print("Success? %s" % response["success"])
+
+    print("Upload done.")
+
+
+if __name__ == "__main__":
+    main()
