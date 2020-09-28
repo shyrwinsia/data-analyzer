@@ -37,17 +37,23 @@ def main():
         df = df.append(pd.read_csv(arg, sep="\t"))
 
     df.drop_duplicates(inplace=True)
-    df.dropna(subset=["state", "status"])
-    df = df[["state", "status"]]
+    df.dropna(subset=["state", "status"], inplace=True)
 
     summary = (
-        pd.DataFrame(df.state.value_counts())
+        pd.DataFrame(df[["state", "status"]].state.value_counts())
         .reset_index()
         .rename(columns={"index": "state", "state": "count"})
     )
+
     details = pd.DataFrame(
-        {"count": df.groupby(["state", "status"]).size()}
+        {"count": df[["state", "status"]].groupby(["state", "status"]).size()}
     ).reset_index()
+
+    appointments = df[["state", "call_date"]].loc[df["status"] == "APP"]
+    appointments.sort_values(by=["call_date"], inplace=True)
+    appointments[["date", "time"]] = df["call_date"].str.split(
+        " ", expand=True,)
+    appointments = appointments[["date", "time", "state"]]
 
     print("Uploading summary.")
     response = post_to_json_bin(summary, "5f4c81c2514ec5112d12aa06")
@@ -55,6 +61,10 @@ def main():
 
     print("Uploading details.")
     response = post_to_json_bin(details, "5f4c8259993a2e110d3ad302")
+    print("Success? %s" % response["success"])
+
+    print("Uploading appointments.")
+    response = post_to_json_bin(appointments, "5f7209b465b18913fc5564d5")
     print("Success? %s" % response["success"])
 
     print("Upload done.")

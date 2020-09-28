@@ -2,6 +2,7 @@ var summary = d3.map();
 var details = d3.map();
 var stateIds = d3.map();
 var stateNames = d3.map();
+var appointments = [];
 var max = 1000;
 var color;
 
@@ -30,6 +31,8 @@ var promises = [
       }
     })
 ];
+
+d3.json('https://api.jsonbin.io/b/5f7209b465b18913fc5564d5/latest').then(d => appointments = d);
 
 d3.json('https://api.jsonbin.io/b/5f4c81c2514ec5112d12aa06/latest').then(
   function (d) {
@@ -82,24 +85,32 @@ function ready([us]) {
       var name = stateNames.get(code);
       tooltip.transition().duration(300).style('opacity', 0.9);
 
-      var htmlString = '';
+      var tooltipString = `<h4>${name}</h4>
+        <table><tbody>
+        <tr><td class='number'>${summary.get(code) | 0
+        }</td><td class='label'>Total Calls</td></tr>
+        </tbody></table>`;
+      var detailsString = '';
+      var appointmentString = '';
       detailsFromCode = details.get(code);
 
-      if (detailsFromCode)
+      if (detailsFromCode) {
         detailsFromCode.forEach((e) => {
-          htmlString += `<tr><td class='number'>${e.count}</td><td class='label'>${e.status}</td></tr>`;
+          detailsString += `<tr><td class='number'>${e.count}</td><td class='label'>${e.status}</td></tr>`;
         });
+        tooltipString += `<table><tbody>${detailsString}</tbody></table>`;
+      }
+
+      appdates = appointments.filter(app => app.state === code);
+      if (appdates.length > 0) {
+        appdates.forEach((e) => {
+          appointmentString += `<tr><td>${e.date}</td><td class='label'>${e.time}</td></tr>`;
+        });
+        tooltipString += `<p>Appointments</p><table><tbody>${appointmentString}</tbody></table>`;
+      }
 
       tooltip
-        .html(
-          `<p>${name}</p>
-        <table><tbody>
-        <tr><td class='number'>${
-          summary.get(code) | 0
-        }</td><td class='label'>Total Calls</td></tr>
-        </tbody></table>
-        <table><tbody>${htmlString}</tbody></table>`
-        )
+        .html(tooltipString)
         .style('left', d3.event.pageX + 15 + 'px')
         .style('top', d3.event.pageY - 28 + 'px');
 
