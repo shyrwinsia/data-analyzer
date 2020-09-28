@@ -32,7 +32,7 @@ def upload():
     root.filename = filedialog.askopenfilename(initialdir="", title="Select a file", filetypes=(("Text files", "*.txt"),))
     if root.filename:
         choose_btn.destroy()
-        label_file = tk.Label(text="Uploading file: " + root.filename, wraplength=200)
+        label_file = tk.Label(text="Uploading file: " + root.filename, wraplength=280)
         canvas.create_window(150, 130, window=label_file)
 
         try:
@@ -71,12 +71,12 @@ def upload():
             print("Success? %s" % response["success"])
 
             done_message = tk.Label(canvas, text="Upload finished.") 
-            canvas.create_window(150, 220, window=done_message)
+            canvas.create_window(150, 180, window=done_message)
         
         except Exception as e:
             messagebox.showerror("Error", "Check the file or your internet connection.")
             error_message = tk.Label(canvas, text="Failed! Close window and try again.")
-            canvas.create_window(150, 150, window=error_message)
+            canvas.create_window(150, 180, window=error_message)
    
 choose_btn = tk.Button(text='Choose file...', command=upload)
 canvas.create_window(150, 150, window=choose_btn)
